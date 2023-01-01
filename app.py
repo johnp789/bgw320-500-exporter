@@ -1,4 +1,4 @@
-"""bg320-500 exporter"""
+"""bgw320-500 exporter"""
 import os
 import time
 
@@ -46,6 +46,12 @@ def device_info():
     return (model_number, serial_number, software_version, uptime)
 
 
+def counter_from_label(soup, label, help_text):
+    counter_value = soup.find(text=label).next_element.next_element.string
+
+    counter = CounterMetricFamily(help_text, label)
+    counter.add_metric([], int(counter_value))
+
 class CustomCollector:
     def collect(self):
         labels = [
@@ -88,44 +94,10 @@ class CustomCollector:
         counter.add_metric([], int(uptime))
         yield counter
 
-        receive_bytes = soup.find(text="Receive Bytes").next_element.next_element.string
-
-        counter = CounterMetricFamily("receive_bytes_total", "Received bytes")
-        counter.add_metric([], int(receive_bytes))
-        yield counter
-
-        receive_packets = soup.find(
-            text="Receive Packets"
-        ).next_element.next_element.string
-
-        counter = CounterMetricFamily(
-            "receive_packets_total",
-            "Received packets",
-        )
-        counter.add_metric([], int(receive_packets))
-        yield counter
-
-        transmit_bytes = soup.find(
-            text="Transmit Bytes"
-        ).next_element.next_element.string
-
-        counter = CounterMetricFamily(
-            "transmit_bytes_total",
-            "Transmitted bytes",
-        )
-        counter.add_metric([], int(transmit_bytes))
-        yield counter
-
-        transmit_packets = soup.find(
-            text="Transmit Packets"
-        ).next_element.next_element.string
-
-        counter = CounterMetricFamily(
-            "transmit_packets_total",
-            "Transmitted packets",
-        )
-        counter.add_metric([], int(transmit_packets))
-        yield counter
+        yield counter_from_label(soup, "Receive Bytes", "receive_bytes_total")
+        yield counter_from_label(soup, "Receive Packets", "receive_packets_total")
+        yield counter_from_label(soup, "Transmit Bytes", "transmit_bytes_total")
+        yield counter_from_label(soup, "Transmitted packets", "transmit_packets_total")
 
 
 REGISTRY.register(CustomCollector())
